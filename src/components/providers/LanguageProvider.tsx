@@ -17,6 +17,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   // Load locale from localStorage on mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const savedLocale = localStorage.getItem('locale') as Locale;
     if (savedLocale && (savedLocale === 'en' || savedLocale === 'id')) {
       setLocale(savedLocale);

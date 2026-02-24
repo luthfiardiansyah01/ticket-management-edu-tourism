@@ -37,7 +37,7 @@ export default function RegisterPage() {
       
       if (!validationResult.success) {
         // Extract the first error message
-        const firstError = validationResult.error.errors[0];
+        const firstError = validationResult.error.issues[0];
         throw new Error(firstError.message);
       }
 
@@ -62,7 +62,7 @@ export default function RegisterPage() {
     } catch (err: any) {
       // Handle different types of errors safely
       if (err instanceof ZodError) {
-        setError(err.errors[0]?.message || 'Validation failed');
+        setError(err.issues[0]?.message || 'Validation failed');
       } else {
         setError(err.message || 'An unexpected error occurred');
       }

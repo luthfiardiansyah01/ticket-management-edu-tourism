@@ -46,6 +46,7 @@ export function Chatbot() {
     if (!inputValue.trim()) return;
 
     const userMessage: Message = {
+      // eslint-disable-next-line react-hooks/purity
       id: Date.now().toString(),
       text: inputValue,
       sender: 'user',
@@ -57,7 +58,7 @@ export function Chatbot() {
 
     // Simulate bot thinking and responding
     setTimeout(() => {
-      const responseText = getBotResponse(inputValue);
+      const responseText = getBotResponse(userMessage.text);
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: responseText,

@@ -16,6 +16,7 @@ export function VibeSelector() {
   const { t } = useLanguage();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
     setMounted(true);
     // Check if user has already selected a vibe preference
     const hasSelectedVibe = localStorage.getItem('vibe-selected');

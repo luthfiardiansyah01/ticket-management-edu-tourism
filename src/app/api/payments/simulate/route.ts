@@ -33,7 +33,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'Booking already paid' }, { status: 400 });
     }
 
-    await db.transaction(async (tx) => {
+    // Use 'any' type for tx to avoid implicit any error if type inference fails
+    await db.transaction(async (tx: any) => {
       // Update booking status
       await tx.update(bookings)
         .set({ status: 'paid' })
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ message: 'Validation failed', errors: error.errors }, { status: 400 });
+      return NextResponse.json({ message: 'Validation failed', errors: error.issues }, { status: 400 });
     }
     return NextResponse.json({ message: error.message || 'Internal server error' }, { status: 500 });
   }

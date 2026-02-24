@@ -14,8 +14,12 @@ export default function DonateSection() {
 
   const amounts = [10000, 25000, 50000, 100000];
 
+  const [referenceId, setReferenceId] = useState<string>('');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Generate reference ID only on submit
+    setReferenceId(`DON-${Math.floor(Math.random() * 1000000)}`);
     // Simulate API call
     setTimeout(() => {
       setSubmitted(true);
@@ -28,7 +32,7 @@ export default function DonateSection() {
         <div className="bg-red-100 dark:bg-red-900 w-20 h-20 rounded-full flex items-center justify-center mb-6 mx-auto">
           <CheckCircle className="h-10 w-10 text-red-600 dark:text-red-400" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">{t('partnership.donate.form.reference')}: DON-{Math.floor(Math.random() * 1000000)}</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-2">{t('partnership.donate.form.reference')}: {referenceId}</h2>
         <p className="text-foreground/70 mb-6">{t('partnership.donate.form.note')}</p>
         <button 
           onClick={() => setSubmitted(false)}

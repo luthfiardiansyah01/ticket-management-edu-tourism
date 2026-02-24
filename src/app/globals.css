@@ -1,0 +1,70 @@
+
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  
+  /* Register font families from variables */
+  --font-inter: var(--font-inter);
+  --font-retro: var(--font-retro);
+  --font-groovy: var(--font-groovy);
+  --font-vintage: var(--font-vintage);
+}
+
+:root {
+  /* Default to Minimalist (Light) */
+  --background: #f8fafc; /* Slate-50 */
+  --foreground: #334155; /* Slate-700 */
+  --font-main: var(--font-inter);
+}
+
+/* Minimalist Vibe (Default Light) - Clean & Zen */
+[data-theme='minimalist'],
+[data-theme='light'] {
+  --background: #f8fafc; /* Slate-50 */
+  --foreground: #334155; /* Slate-700 */
+  --font-main: var(--font-inter);
+}
+
+/* Cosmic Vibe (Dark) - Deep Purple & Starry */
+[data-theme='cosmic'],
+[data-theme='dark'] {
+  --background: #1e1b4b; /* Indigo-950 */
+  --foreground: #e0e7ff; /* Indigo-100 */
+  --font-main: var(--font-inter); /* Futuristic Sans */
+}
+
+/* Retro Vibe - Nostalgic Yellow & Purple */
+[data-theme='retro'] {
+  --background: #fef3c7; /* Amber-100 */
+  --foreground: #581c87; /* Purple-900 */
+  --font-main: var(--font-retro);
+}
+
+/* Neon Vibe - High Tech Black & Green */
+[data-theme='neon'] {
+  --background: #000000; /* Black */
+  --foreground: #22c55e; /* Green-500 */
+  --font-main: var(--font-inter); /* Tech style */
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-main), sans-serif;
+  transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out, font-family 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Utilities for VibeSelector preview */
+.font-retro {
+  font-family: var(--font-retro), monospace;
+}
+.font-groovy {
+  font-family: var(--font-groovy), cursive;
+}
+.font-vintage {
+  font-family: var(--font-vintage), serif;
+}

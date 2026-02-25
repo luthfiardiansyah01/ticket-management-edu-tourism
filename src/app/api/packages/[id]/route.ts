@@ -7,9 +7,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } // ✅ params sebagai Promise
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params; // ✅ await untuk resolve params
+  const { id } = await context.params;
+
+  console.log(`[API] Fetching package with ID: ${id}`);
 
   try {
     const pkg = await db.query.ticketPackages.findFirst({
@@ -17,6 +19,7 @@ export async function GET(
     });
 
     if (!pkg) {
+      console.warn(`[API] Package not found for ID: ${id}`);
       return NextResponse.json(
         { error: 'Package not found' },
         { status: 404 }

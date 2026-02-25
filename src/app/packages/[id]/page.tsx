@@ -1,8 +1,7 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
-import { notFound } from 'next/navigation';
+import { useState, useEffect, use } from 'react';
+import { useParams } from 'next/navigation';
 import BookingForm from '@/components/BookingForm';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 
@@ -85,22 +84,22 @@ const TRANSLATIONS: Record<string, {
   }
 };
 
-export default function PackageDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export default function PackageDetailPage() {
+  const params = useParams();
+  const id = params?.id as string;
   const { t, locale } = useLanguage();
   const [pkg, setPkg] = useState<Package | null>(null);
   const [loading, setLoading] = useState(true);
-  const [id, setId] = useState<string>('');
-
-  useEffect(() => {
-    params.then((p) => setId(p.id));
-  }, [params]);
 
   useEffect(() => {
     if (!id) return;
 
     async function fetchPackage() {
       try {
-        const response = await fetch(`/api/packages/${id}`);
+        const response = await fetch(`/api/packages/${id}`, { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
           setPkg(data);

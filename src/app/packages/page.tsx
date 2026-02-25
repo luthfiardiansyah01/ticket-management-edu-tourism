@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -105,9 +104,6 @@ const KEY_TAKEAWAYS = {
     }
   ]
 };
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export default function PackagesPage() {
   const { t, locale } = useLanguage(); 

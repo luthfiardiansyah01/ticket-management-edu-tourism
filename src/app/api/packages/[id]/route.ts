@@ -1,4 +1,3 @@
-
 import { db } from '@/db';
 import { ticketPackages } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -8,21 +7,28 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } } // ✅ params adalah object langsung
 ) {
-  const { id } = await params;
+  const { id } = context.params;
+
   try {
     const pkg = await db.query.ticketPackages.findFirst({
       where: eq(ticketPackages.id, id),
     });
 
     if (!pkg) {
-      return NextResponse.json({ error: 'Package not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Package not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(pkg);
   } catch (error) {
     console.error('Error fetching package:', error);
-    return NextResponse.json({ error: 'Failed to fetch package' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch package' },
+      { status: 500 }
+    );
   }
 }

@@ -106,6 +106,9 @@ const KEY_TAKEAWAYS = {
   ]
 };
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function PackagesPage() {
   const { t, locale } = useLanguage(); 
   const [packages, setPackages] = useState<Package[]>([]);
@@ -114,7 +117,7 @@ export default function PackagesPage() {
   useEffect(() => {
     async function fetchPackages() {
       try {
-        const response = await fetch('/api/packages');
+        const response = await fetch('/api/packages', { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
           setPackages(data);

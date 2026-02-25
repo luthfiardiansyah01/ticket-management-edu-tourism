@@ -1,17 +1,21 @@
-
 import { db } from '@/db';
 import { ticketPackages } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const packages = await db.select().from(ticketPackages).where(eq(ticketPackages.is_active, true));
+    const packages = await db.query.ticketPackages.findMany({
+      orderBy: ticketPackages.created_at,
+    });
+
     return NextResponse.json(packages);
   } catch (error) {
-    console.error('Error fetching packages:', error);
-    return NextResponse.json({ error: 'Failed to fetch packages' }, { status: 500 });
+    console.error('Failed to fetch packages:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch packages' },
+      { status: 500 }
+    );
   }
 }

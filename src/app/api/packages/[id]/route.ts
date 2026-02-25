@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: Request,
-  context: { params: { id: string } } // ✅ params adalah object langsung
+  context: { params: { id: string } } // ✅ Params langsung object
 ) {
   const { id } = context.params;
 
@@ -25,7 +25,7 @@ export async function GET(
 
     return NextResponse.json(pkg);
   } catch (error) {
-    console.error('Error fetching package:', error);
+    console.error('Failed to fetch package:', error);
     return NextResponse.json(
       { error: 'Failed to fetch package' },
       { status: 500 }

@@ -1,15 +1,15 @@
 import { db } from '@/db';
 import { ticketPackages } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(
-  request: Request,
-  context: { params: { id: string } } // ✅ Params langsung object
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> } // ✅ params sebagai Promise
 ) {
-  const { id } = context.params;
+  const { id } = await context.params; // ✅ await untuk resolve params
 
   try {
     const pkg = await db.query.ticketPackages.findFirst({

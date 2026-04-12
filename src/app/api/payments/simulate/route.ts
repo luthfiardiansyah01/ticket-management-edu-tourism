@@ -1,16 +1,32 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db } from '@/db';
-import { bookings, payments, qrTickets } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { paymentService } from '@/services/payment.service';
 import { z } from 'zod';
+
+/**
+ * Payment API Route - Thin Controller
+ * Handles HTTP concerns and delegates business logic to PaymentService
+ * 
+ * Validates: Requirements 8.1-8.10
+ */
 
 const paymentSchema = z.object({
   bookingId: z.string(),
 });
 
+/**
+ * POST /api/payments/simulate
+ * Process payment for a booking
+ * 
+ * @param req - Request with bookingId
+ * @returns 200 with success message on success
+ * @returns 400 for validation errors or already paid
+ * @returns 401 for unauthorized access
+ * @returns 404 for booking not found
+ */
 export async function POST(req: Request) {
+  // Authentication check
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -18,58 +34,32 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Request validation
     const body = await req.json();
     const { bookingId } = paymentSchema.parse(body);
 
-    const booking = await db.query.bookings.findFirst({
-      where: eq(bookings.id, bookingId),
-    });
+    // Delegate to service layer
+    const result = await paymentService.processPayment(bookingId);
 
-    if (!booking) {
-      return NextResponse.json({ message: 'Booking not found' }, { status: 404 });
-    }
-
-    if (booking.status === 'paid') {
-      return NextResponse.json({ message: 'Booking already paid' }, { status: 400 });
-    }
-
-    // Use 'any' type for tx to avoid implicit any error if type inference fails
-    await db.transaction(async (tx: any) => {
-      // Update booking status
-      await tx.update(bookings)
-        .set({ status: 'paid' })
-        .where(eq(bookings.id, bookingId));
-
-      // Create payment record
-      await tx.insert(payments).values({
-        booking_id: bookingId,
-        provider: 'mock_gateway',
-        payment_status: 'success',
-        external_ref: `mock_${Date.now()}`,
-        paid_at: new Date().toISOString(),
-      });
-
-      // Generate QR tickets
-      const tickets = [];
-      for (let i = 0; i < booking.quantity; i++) {
-        tickets.push({
-          booking_id: bookingId,
-          qr_token: crypto.randomUUID(), // Unique token
-          is_checked_in: false,
-        });
-      }
-
-      if (tickets.length > 0) {
-        await tx.insert(qrTickets).values(tickets);
-      }
-    });
-
-    return NextResponse.json({ message: 'Payment successful', bookingId }, { status: 200 });
+    // Return success response
+    return NextResponse.json({ message: result.message, bookingId: result.bookingId }, { status: 200 });
 
   } catch (error: any) {
+
+    console.error('🚨 ERROR ASLI DI ROUTE:', error.message, error.stack);
+    // Error mapping
     if (error instanceof z.ZodError) {
       return NextResponse.json({ message: 'Validation failed', errors: error.issues }, { status: 400 });
     }
+
+    if (error.message === 'Booking not found') {
+      return NextResponse.json({ message: error.message }, { status: 404 });
+    }
+
+    if (error.message === 'Booking already paid') {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
+
     return NextResponse.json({ message: error.message || 'Internal server error' }, { status: 500 });
   }
 }

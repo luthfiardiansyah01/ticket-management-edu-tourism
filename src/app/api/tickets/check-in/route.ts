@@ -1,16 +1,32 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db } from '@/db';
-import { qrTickets, bookings, ticketPackages } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { ticketService } from '@/services/ticket.service';
 import { z } from 'zod';
+
+/**
+ * Ticket Check-In API Route - Thin Controller
+ * Handles HTTP concerns and delegates business logic to TicketService
+ * 
+ * Validates: Requirements 9.1-9.10
+ */
 
 const checkInSchema = z.object({
   qrToken: z.string(),
 });
 
+/**
+ * POST /api/tickets/check-in
+ * Check in a ticket using QR token
+ * 
+ * @param req - Request with qrToken
+ * @returns 200 with ticket details on success
+ * @returns 400 for validation errors or already used ticket
+ * @returns 401 for unauthorized access (admin/staff only)
+ * @returns 404 for ticket not found
+ */
 export async function POST(req: Request) {
+  // Authentication and authorization check (admin/staff only)
   const session = await getServerSession(authOptions);
 
   if (!session || (session.user.role !== 'admin' && session.user.role !== 'staff')) {
@@ -18,59 +34,38 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Request validation
     const body = await req.json();
     const { qrToken } = checkInSchema.parse(body);
 
-    const ticket = await db.query.qrTickets.findFirst({
-      where: eq(qrTickets.qr_token, qrToken),
-      with: {
-        booking: {
-          with: {
-            package: true,
-            user: true,
-          }
-        }
-      }
-    });
+    // Delegate to service layer
+    const ticketDetails = await ticketService.checkInTicket(qrToken);
 
-    if (!ticket) {
-      return NextResponse.json({ message: 'Ticket not found' }, { status: 404 });
-    }
-
-    if (ticket.is_checked_in) {
-      return NextResponse.json({ 
-        message: 'Ticket already used', 
-        ticket: {
-            id: ticket.id,
-            checkedInAt: ticket.checked_in_at,
-            packageName: ticket.booking.package.name,
-            visitorName: ticket.booking.user.name,
-        }
-      }, { status: 400 });
-    }
-
-    // Perform check-in
-    await db.update(qrTickets)
-      .set({ 
-        is_checked_in: true, 
-        checked_in_at: new Date().toISOString() 
-      })
-      .where(eq(qrTickets.id, ticket.id));
-
+    // Return success response
     return NextResponse.json({ 
       message: 'Check-in successful',
       ticket: {
-        id: ticket.id,
-        packageName: ticket.booking.package.name,
-        visitorName: ticket.booking.user.name,
-        visitDate: ticket.booking.visit_date,
+        id: ticketDetails.ticketId,
+        packageName: ticketDetails.packageName,
+        visitorName: ticketDetails.visitorName,
+        visitDate: ticketDetails.visitDate,
       }
     }, { status: 200 });
 
   } catch (error: any) {
+    // Error mapping
     if (error instanceof z.ZodError) {
       return NextResponse.json({ message: 'Validation failed', errors: error.issues }, { status: 400 });
     }
+
+    if (error.message === 'Ticket not found') {
+      return NextResponse.json({ message: error.message }, { status: 404 });
+    }
+
+    if (error.message === 'Ticket already used') {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
+
     return NextResponse.json({ message: error.message || 'Internal server error' }, { status: 500 });
   }
 }

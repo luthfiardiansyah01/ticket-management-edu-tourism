@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -13,31 +13,81 @@ interface BookingFormProps {
   category: 'personal' | 'school';
 }
 
+interface PriceCalculation {
+  totalPrice: number;
+  pricePerUnit: number;
+  discountApplied: boolean;
+  discountPercentage: number;
+}
+
 export default function BookingForm({ packageId, basePrice, promoPrice, category }: BookingFormProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const { t } = useLanguage();
   const [visitDate, setVisitDate] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [totalPrice, setTotalPrice] = useState(0);
+  const [priceData, setPriceData] = useState<PriceCalculation | null>(null);
+  const [loadingPrice, setLoadingPrice] = useState(false);
+  const [priceError, setPriceError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Calculate price whenever quantity changes
-  useEffect(() => {
-    let pricePerPax = promoPrice ?? basePrice;
+  // Fetch price from API with debouncing
+  const fetchPrice = useCallback(async (qty: number) => {
+    if (qty < 1) return;
 
-    // Apply school bulk discount logic
-    if (category === 'school') {
-      if (quantity >= 100) {
-        pricePerPax = Math.floor(pricePerPax * 0.85); // 15% off
-      } else if (quantity >= 50) {
-        pricePerPax = Math.floor(pricePerPax * 0.90); // 10% off
+    setLoadingPrice(true);
+    setPriceError('');
+
+    try {
+      const res = await fetch('/api/packages/calculate-price', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          packageId,
+          quantity: qty,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to calculate price');
       }
-    }
 
-    setTotalPrice(pricePerPax * quantity);
-  }, [quantity, basePrice, promoPrice, category]);
+      setPriceData(data);
+    } catch (err: any) {
+      setPriceError(err.message);
+      // Fallback to local calculation if API fails
+      let pricePerPax = promoPrice ?? basePrice;
+      if (category === 'school') {
+        if (qty >= 100) {
+          pricePerPax = Math.floor(pricePerPax * 0.85);
+        } else if (qty >= 50) {
+          pricePerPax = Math.floor(pricePerPax * 0.90);
+        }
+      }
+      setPriceData({
+        totalPrice: pricePerPax * qty,
+        pricePerUnit: pricePerPax,
+        discountApplied: category === 'school' && qty >= 50,
+        discountPercentage: category === 'school' ? (qty >= 100 ? 15 : qty >= 50 ? 10 : 0) : 0,
+      });
+    } finally {
+      setLoadingPrice(false);
+    }
+  }, [packageId, basePrice, promoPrice, category]);
+
+  // Debounced price calculation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchPrice(quantity);
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timer);
+  }, [quantity, fetchPrice]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +143,12 @@ export default function BookingForm({ packageId, basePrice, promoPrice, category
         </div>
       )}
 
+      {priceError && (
+        <div className="bg-yellow-50 text-yellow-700 p-3 rounded-md text-sm">
+          {t('booking.priceWarning')}: {priceError}
+        </div>
+      )}
+
       <div>
         <label htmlFor="visitDate" className="block text-sm font-medium text-foreground/80 mb-1">
           {t('booking.visitDate')}
@@ -126,19 +182,37 @@ export default function BookingForm({ packageId, basePrice, promoPrice, category
             {t('booking.bulkDiscount')}
           </p>
         )}
+        {priceData && priceData.discountApplied && (
+          <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
+            ✓ {priceData.discountPercentage}% {t('booking.discountApplied')}
+          </p>
+        )}
       </div>
 
       <div className="pt-4 border-t border-foreground/10">
         <div className="flex justify-between items-center mb-4">
           <span className="text-foreground/70">{t('booking.totalPrice')}</span>
-          <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-            Rp {totalPrice.toLocaleString('id-ID')}
-          </span>
+          {loadingPrice ? (
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
+              <span className="text-sm text-foreground/60">{t('booking.calculating')}</span>
+            </div>
+          ) : (
+            <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+              Rp {(priceData?.totalPrice || 0).toLocaleString('id-ID')}
+            </span>
+          )}
         </div>
+
+        {priceData && priceData.pricePerUnit !== (promoPrice ?? basePrice) && (
+          <div className="text-xs text-foreground/60 mb-4">
+            <span>{t('booking.pricePerUnit')}: Rp {priceData.pricePerUnit.toLocaleString('id-ID')}</span>
+          </div>
+        )}
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || loadingPrice}
           className="w-full bg-green-600 text-white py-3 px-4 rounded-md font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? t('booking.processing') : t('booking.bookNow')}

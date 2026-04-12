@@ -1,4 +1,3 @@
-
 import { createClient } from '@libsql/client';
 import * as dotenv from 'dotenv';
 

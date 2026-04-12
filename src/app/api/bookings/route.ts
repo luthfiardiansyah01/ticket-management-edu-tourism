@@ -1,11 +1,16 @@
-
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db } from '@/db';
-import { bookings, ticketPackages } from '@/db/schema';
-import { eq, and, ne, count } from 'drizzle-orm';
+import { bookingService } from '@/services/booking.service';
 import { z } from 'zod';
+import { withRetry } from '@/lib/test-utils';
+
+/**
+ * Booking API Route - Thin Controller
+ * Handles HTTP concerns and delegates business logic to BookingService
+ * 
+ * Validates: Requirements 7.1-7.10
+ */
 
 const bookingSchema = z.object({
   packageId: z.string(),
@@ -13,7 +18,18 @@ const bookingSchema = z.object({
   quantity: z.number().min(1),
 });
 
+/**
+ * POST /api/bookings
+ * Create a new booking
+ * 
+ * @param req - Request with packageId, visitDate, quantity
+ * @returns 201 with bookingId on success
+ * @returns 400 for validation errors or quota exceeded
+ * @returns 401 for unauthorized access
+ * @returns 404 for package not found
+ */
 export async function POST(req: Request) {
+  // Authentication check
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -21,71 +37,39 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Request validation
     const body = await req.json();
     const { packageId, visitDate, quantity } = bookingSchema.parse(body);
 
-    // Fetch package
-    const pkg = await db.query.ticketPackages.findFirst({
-      where: eq(ticketPackages.id, packageId),
-    });
-
-    if (!pkg || !pkg.is_active) {
-      return NextResponse.json({ message: 'Package not found or inactive' }, { status: 404 });
-    }
-
-    const bookingId = await db.transaction(async (tx) => {
-      // Check quota (exclude cancelled bookings)
-      const currentBookings = await tx
-        .select({ count: count() })
-        .from(bookings)
-        .where(and(
-            eq(bookings.package_id, packageId),
-            eq(bookings.visit_date, visitDate),
-            ne(bookings.status, 'cancelled')
-        ));
-        
-      const currentCount = currentBookings[0]?.count ?? 0;
-
-      if (currentCount + quantity > pkg.quota_per_day) {
-        throw new Error('Quota exceeded for this date');
-      }
-
-      // Calculate price
-      let pricePerPax = pkg.promo_price ?? pkg.base_price;
-      
-      // Bulk discount for school
-      if (pkg.category === 'school') {
-        if (quantity >= 100) {
-          pricePerPax = Math.floor(pricePerPax * 0.85); // 15% off
-        } else if (quantity >= 50) {
-          pricePerPax = Math.floor(pricePerPax * 0.90); // 10% off
-        }
-      }
-
-      const totalPrice = pricePerPax * quantity;
-
-      const newBooking = await tx.insert(bookings).values({
-        user_id: session.user.id,
-        package_id: packageId,
-        visit_date: visitDate, // YYYY-MM-DD
+    // Delegate to service layer
+    const bookingId = await withRetry(() => 
+      bookingService.createBooking({
+        userId: session.user.id,
+        packageId,
+        visitDate,
         quantity,
-        total_price: totalPrice,
-        status: 'pending',
-      }).returning();
-      
-      if (!newBooking || newBooking.length === 0) {
-          throw new Error('Failed to create booking');
-      }
+      })
+    );
 
-      return newBooking[0].id;
-    });
-
+    // Return success response
     return NextResponse.json({ bookingId, message: 'Booking created' }, { status: 201 });
 
   } catch (error: any) {
+    // Error mapping
     if (error instanceof z.ZodError) {
       return NextResponse.json({ message: 'Validation failed', errors: error.issues }, { status: 400 });
     }
+
+    if (error.message === 'Package not found or inactive') {
+      return NextResponse.json({ message: error.message }, { status: 404 });
+    }
+
+    if (error.message === 'Quota exceeded for this date' || error.message === 'Quantity must be at least 1') {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
+
+    console.error('BOOKING ERROR:', JSON.stringify(error, null, 2));
+
     return NextResponse.json({ message: error.message || 'Internal server error' }, { status: 500 });
   }
 }

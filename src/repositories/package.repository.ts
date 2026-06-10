@@ -21,7 +21,12 @@ export class PackageRepository {
       where: eq(ticketPackages.id, id),
     });
 
-    return result ?? null;
+    if (!result) return null;
+    
+    return {
+      ...result,
+      is_active: result.is_active ?? false,
+    };
   }
 
   /**

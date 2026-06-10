@@ -100,6 +100,8 @@ export default function PackageClient({ id }: { id: string }) {
         } else {
           setPkg(null);
         }
+        console.log('API response:', response.status);
+        console.log('API url:', `/api/packages/${id}`);
       } catch (error) {
         console.error('Failed to fetch package:', error);
       } finally {

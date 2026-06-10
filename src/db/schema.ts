@@ -28,7 +28,7 @@ export const ticketPackages = sqliteTable('ticket_packages', {
   base_price: integer('base_price').notNull(),
   promo_price: integer('promo_price'),
   quota_per_day: integer('quota_per_day').notNull().default(50),
-  is_active: integer('is_active', { mode: 'boolean' }).default(true),
+  is_active: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
   created_at: timestamp('created_at').notNull(),
 }, (table) => ({
   activeIdx: index('idx_packages_active').on(table.is_active),
@@ -76,7 +76,7 @@ export const payments = sqliteTable('payments', {
   booking_id: text('booking_id').notNull().unique().references(() => bookings.id),
   provider: text('provider').notNull(),
   payment_status: text('payment_status', { enum: ['pending', 'success', 'failed'] })
-    .default('pending'),
+    .default('pending').notNull(),
   external_ref: text('external_ref'),
   paid_at: text('paid_at'),
   created_at: timestamp('created_at'),
@@ -89,7 +89,7 @@ export const qrTickets = sqliteTable('qr_tickets', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   booking_id: text('booking_id').notNull().references(() => bookings.id),
   qr_token: text('qr_token').notNull().unique(),
-  is_checked_in: integer('is_checked_in', { mode: 'boolean' }).default(false),
+  is_checked_in: integer('is_checked_in', { mode: 'boolean' }).default(false).notNull(),
   checked_in_at: text('checked_in_at'),
   created_at: timestamp('created_at'),
 }, (table) => ({

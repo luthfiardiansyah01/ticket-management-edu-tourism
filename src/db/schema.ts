@@ -29,10 +29,28 @@ export const ticketPackages = sqliteTable('ticket_packages', {
   promo_price: integer('promo_price'),
   quota_per_day: integer('quota_per_day').notNull().default(50),
   is_active: integer('is_active', { mode: 'boolean' }).default(true),
-  created_at: timestamp('created_at'),
+  created_at: timestamp('created_at').notNull(),
 }, (table) => ({
   activeIdx: index('idx_packages_active').on(table.is_active),
   categoryIdx: index('idx_packages_category').on(table.category),
+}));
+
+export const umkmProducts = sqliteTable('umkm_products', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  description: text('description').notNull(),
+  price: integer('price').notNull(),
+  category: text('category', { enum: ['food', 'craft', 'fashion', 'souvenir', 'other'] })
+    .default('other')
+    .notNull(),
+  stock: integer('stock').notNull().default(0),
+  image_url: text('image_url'),
+  is_active: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
+  created_at: timestamp('created_at'),
+  updated_at: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => ({
+  activeIdx: index('idx_umkm_active').on(table.is_active),
+  categoryIdx: index('idx_umkm_category').on(table.category),
 }));
 
 export const bookings = sqliteTable('bookings', {

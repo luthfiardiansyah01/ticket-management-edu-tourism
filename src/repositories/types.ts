@@ -93,6 +93,23 @@ export interface User {
   created_at: string;
 }
 
+/**
+ * UMKM Product entity
+ * Represents a product sold by UMKM partners
+ */
+export interface UmkmProduct {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: 'food' | 'craft' | 'fashion' | 'souvenir' | 'other';
+  stock: number;
+  image_url: string | null;
+  is_active: boolean;
+  created_at: string | null;
+  updated_at: string;
+}
+
 // ============================================================================
 // Input Types (Data Transfer Objects)
 // ============================================================================
@@ -130,4 +147,31 @@ export interface CreateTicketInput {
   booking_id: string;
   qr_token: string;
   is_checked_in: boolean;
+}
+
+/**
+ * Input data for creating a new UMKM product
+ * Used by UmkmProductRepository.create()
+ */
+export interface CreateUmkmProductInput {
+  name: string;
+  description: string;
+  price: number;
+  category: 'food' | 'craft' | 'fashion' | 'souvenir' | 'other';
+  stock: number;
+  image_url?: string | null;
+}
+
+/**
+ * Input data for updating an existing UMKM product
+ * Used by UmkmProductRepository.update()
+ */
+export interface UpdateUmkmProductInput {
+  name?: string;
+  description?: string;
+  price?: number;
+  category?: 'food' | 'craft' | 'fashion' | 'souvenir' | 'other';
+  stock?: number;
+  image_url?: string | null;
+  is_active?: boolean;
 }

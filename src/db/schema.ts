@@ -4,7 +4,7 @@ import { relations } from 'drizzle-orm';
 
 // Helper for timestamps
 const timestamp = (name: string) =>
-  text(name).default(sql`CURRENT_TIMESTAMP`);
+  text(name).default(sql`CURRENT_TIMESTAMP`).notNull();
 
 export const users = sqliteTable('users', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -46,7 +46,7 @@ export const umkmProducts = sqliteTable('umkm_products', {
   stock: integer('stock').notNull().default(0),
   image_url: text('image_url'),
   is_active: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
-  created_at: timestamp('created_at'),
+  created_at: timestamp('created_at').notNull(),
   updated_at: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 }, (table) => ({
   activeIdx: index('idx_umkm_active').on(table.is_active),

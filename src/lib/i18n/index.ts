@@ -9,6 +9,7 @@ const en: Dictionary = {
   nav: {
     home: 'Cikapundung River',
     packages: 'Packages',
+    umkm: 'UMKM',
     dashboard: 'Dashboard',
     scan: 'Scan Ticket',
     login: 'Login',
@@ -206,6 +207,7 @@ const id: Dictionary = {
   nav: {
     home: 'Sungai Cikapundung',
     packages: 'Paket',
+    umkm: 'UMKM',
     dashboard: 'Dasbor',
     scan: 'Pindai Tiket',
     login: 'Masuk',

@@ -1,7 +1,19 @@
 import { db } from '@/db';
-import { umkmProducts } from '@/db/schema';
+import { products } from '@/db/schema';
 import { eq, like, and, sql } from 'drizzle-orm';
 import type { UmkmProduct, CreateUmkmProductInput, UpdateUmkmProductInput } from './types';
+
+type PaginatedUmkmProducts = {
+  data: UmkmProduct[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+};
 
 /**
  * Repository for UMKM product data access
@@ -10,37 +22,91 @@ import type { UmkmProduct, CreateUmkmProductInput, UpdateUmkmProductInput } from
  * Provides full CRUD operations with filtering and search support
  */
 export const umkmProductRepository = {
+  buildFilters(options?: {
+    kategori_id?: string;
+    search?: string;
+    activeOnly?: boolean;
+  }) {
+    const conditions = [];
+
+    if (options?.kategori_id) {
+      conditions.push(eq(products.kategori_id, options.kategori_id));
+    }
+
+    if (options?.search) {
+      conditions.push(like(products.nama_produk, `%${options.search}%`));
+    }
+
+    if (options?.activeOnly) {
+      conditions.push(eq(products.status_produk, 'active'));
+    }
+
+    return conditions;
+  },
+
   /**
    * Retrieve all UMKM products with optional filters
    */
   async findAll(options?: {
-    category?: string;
+    kategori_id?: string;
     search?: string;
     activeOnly?: boolean;
   }): Promise<UmkmProduct[]> {
-    const conditions = [];
-
-    if (options?.category) {
-      conditions.push(eq(umkmProducts.category, options.category as UmkmProduct['category']));
-    }
-
-    if (options?.search) {
-      conditions.push(like(umkmProducts.name, `%${options.search}%`));
-    }
-
-    if (options?.activeOnly) {
-      conditions.push(eq(umkmProducts.is_active, true));
-    }
+    const conditions = this.buildFilters(options);
 
     if (conditions.length === 0) {
-      return db.select().from(umkmProducts).orderBy(umkmProducts.created_at);
+      return db.select().from(products).orderBy(products.created_at);
     }
 
     return db
       .select()
-      .from(umkmProducts)
+      .from(products)
       .where(and(...conditions))
-      .orderBy(umkmProducts.created_at);
+      .orderBy(products.created_at);
+  },
+
+  /**
+   * Retrieve paginated UMKM products with optional filters
+   */
+  async findPaginated(options?: {
+    page?: number;
+    limit?: number;
+    kategori_id?: string;
+    search?: string;
+    activeOnly?: boolean;
+  }): Promise<PaginatedUmkmProducts> {
+    const page = Math.max(1, options?.page ?? 1);
+    const limit = Math.min(Math.max(1, options?.limit ?? 10), 100);
+    const offset = (page - 1) * limit;
+    const conditions = this.buildFilters(options);
+
+    const itemsQuery = conditions.length === 0
+      ? db.select().from(products)
+      : db.select().from(products).where(and(...conditions));
+
+    const countQuery = conditions.length === 0
+      ? db.select({ count: sql<number>`COUNT(*)`.mapWith(Number) }).from(products)
+      : db.select({ count: sql<number>`COUNT(*)`.mapWith(Number) }).from(products).where(and(...conditions));
+
+    const [data, totalResult] = await Promise.all([
+      itemsQuery.orderBy(products.created_at).limit(limit).offset(offset),
+      countQuery,
+    ]);
+
+    const total = totalResult[0]?.count ?? 0;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
   },
 
   /**
@@ -49,8 +115,8 @@ export const umkmProductRepository = {
   async findById(id: string): Promise<UmkmProduct | null> {
     const result = await db
       .select()
-      .from(umkmProducts)
-      .where(eq(umkmProducts.id, id))
+      .from(products)
+      .where(eq(products.id, id))
       .limit(1);
 
     return result[0] ?? null;
@@ -61,14 +127,15 @@ export const umkmProductRepository = {
    */
   async create(input: CreateUmkmProductInput): Promise<UmkmProduct> {
     const result = await db
-      .insert(umkmProducts)
+      .insert(products)
       .values({
-        name: input.name,
-        description: input.description,
-        price: input.price,
-        category: input.category,
-        stock: input.stock,
-        image_url: input.image_url ?? null,
+        nama_produk: input.nama_produk,
+        deskripsi: input.deskripsi,
+        harga: input.harga,
+        stok: input.stok ?? 0,
+        kategori_id: input.kategori_id,
+        gambar: input.gambar ?? null,
+        status_produk: input.status_produk ?? 'active',
       })
       .returning();
 
@@ -81,21 +148,21 @@ export const umkmProductRepository = {
   async update(id: string, input: UpdateUmkmProductInput): Promise<UmkmProduct | null> {
     const updateData: Record<string, unknown> = {};
 
-    if (input.name !== undefined) updateData.name = input.name;
-    if (input.description !== undefined) updateData.description = input.description;
-    if (input.price !== undefined) updateData.price = input.price;
-    if (input.category !== undefined) updateData.category = input.category;
-    if (input.stock !== undefined) updateData.stock = input.stock;
-    if (input.image_url !== undefined) updateData.image_url = input.image_url;
-    if (input.is_active !== undefined) updateData.is_active = input.is_active;
+    if (input.nama_produk !== undefined) updateData.nama_produk = input.nama_produk;
+    if (input.deskripsi !== undefined) updateData.deskripsi = input.deskripsi;
+    if (input.harga !== undefined) updateData.harga = input.harga;
+    if (input.stok !== undefined) updateData.stok = input.stok;
+    if (input.kategori_id !== undefined) updateData.kategori_id = input.kategori_id;
+    if (input.gambar !== undefined) updateData.gambar = input.gambar;
+    if (input.status_produk !== undefined) updateData.status_produk = input.status_produk;
 
     // Always update the updated_at timestamp
     updateData.updated_at = sql`CURRENT_TIMESTAMP`;
 
     const result = await db
-      .update(umkmProducts)
+      .update(products)
       .set(updateData as never)
-      .where(eq(umkmProducts.id, id))
+      .where(eq(products.id, id))
       .returning();
 
     return result[0] ?? null;
@@ -106,9 +173,9 @@ export const umkmProductRepository = {
    */
   async delete(id: string): Promise<boolean> {
     const result = await db
-      .delete(umkmProducts)
-      .where(eq(umkmProducts.id, id))
-      .returning({ id: umkmProducts.id });
+      .delete(products)
+      .where(eq(products.id, id))
+      .returning({ id: products.id });
 
     return result.length > 0;
   },
@@ -119,12 +186,12 @@ export const umkmProductRepository = {
   async getCountByCategory(): Promise<{ category: string; count: number }[]> {
     const result = await db
       .select({
-        category: umkmProducts.category,
+        category: products.kategori_id,
         count: sql<number>`COUNT(*)`.mapWith(Number),
       })
-      .from(umkmProducts)
-      .where(eq(umkmProducts.is_active, true))
-      .groupBy(umkmProducts.category);
+      .from(products)
+      .where(eq(products.status_produk, 'active'))
+      .groupBy(products.kategori_id);
 
     return result;
   },

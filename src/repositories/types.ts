@@ -99,14 +99,27 @@ export interface User {
  */
 export interface UmkmProduct {
   id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: 'food' | 'craft' | 'fashion' | 'souvenir' | 'other';
-  stock: number;
-  image_url: string | null;
-  is_active: boolean;
-  created_at: string | null;
+  nama_produk: string;
+  deskripsi: string;
+  harga: number;
+  stok: number;
+  kategori_id: string;
+  gambar: string | null;
+  status_produk: 'active' | 'inactive' | 'draft';
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Product category entity
+ * Represents a reusable category for UMKM products
+ */
+export interface ProductCategory {
+  id: string;
+  nama_kategori: string;
+  slug: string;
+  deskripsi: string | null;
+  created_at: string;
   updated_at: string;
 }
 
@@ -154,12 +167,13 @@ export interface CreateTicketInput {
  * Used by UmkmProductRepository.create()
  */
 export interface CreateUmkmProductInput {
-  name: string;
-  description: string;
-  price: number;
-  category: 'food' | 'craft' | 'fashion' | 'souvenir' | 'other';
-  stock: number;
-  image_url?: string | null;
+  nama_produk: string;
+  deskripsi: string;
+  harga: number;
+  stok?: number;
+  kategori_id: string;
+  gambar?: string | null;
+  status_produk?: 'active' | 'inactive' | 'draft';
 }
 
 /**
@@ -167,11 +181,11 @@ export interface CreateUmkmProductInput {
  * Used by UmkmProductRepository.update()
  */
 export interface UpdateUmkmProductInput {
-  name?: string;
-  description?: string;
-  price?: number;
-  category?: 'food' | 'craft' | 'fashion' | 'souvenir' | 'other';
-  stock?: number;
-  image_url?: string | null;
-  is_active?: boolean;
+  nama_produk?: string;
+  deskripsi?: string;
+  harga?: number;
+  stok?: number;
+  kategori_id?: string;
+  gambar?: string | null;
+  status_produk?: 'active' | 'inactive' | 'draft';
 }

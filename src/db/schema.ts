@@ -35,22 +35,38 @@ export const ticketPackages = sqliteTable('ticket_packages', {
   categoryIdx: index('idx_packages_category').on(table.category),
 }));
 
-export const umkmProducts = sqliteTable('umkm_products', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name').notNull(),
-  description: text('description').notNull(),
-  price: integer('price').notNull(),
-  category: text('category', { enum: ['food', 'craft', 'fashion', 'souvenir', 'other'] })
-    .default('other')
-    .notNull(),
-  stock: integer('stock').notNull().default(0),
-  image_url: text('image_url'),
-  is_active: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
+export const productCategories = sqliteTable('product_categories', {
+  id: text('id').primaryKey(),
+  nama_kategori: text('nama_kategori').notNull(),
+  slug: text('slug').notNull().unique(),
+  deskripsi: text('deskripsi'),
   created_at: timestamp('created_at').notNull(),
-  updated_at: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updated_at: timestamp('updated_at').notNull(),
 }, (table) => ({
-  activeIdx: index('idx_umkm_active').on(table.is_active),
-  categoryIdx: index('idx_umkm_category').on(table.category),
+  slugIdx: index('idx_product_categories_slug').on(table.slug),
+}));
+
+export const products = sqliteTable('products', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  nama_produk: text('nama_produk').notNull(),
+  deskripsi: text('deskripsi').notNull(),
+  harga: integer('harga').notNull(),
+  stok: integer('stok').notNull().default(0),
+  kategori_id: text('kategori_id')
+    .references(() => productCategories.id)
+    .notNull(),
+  gambar: text('gambar'),
+  status_produk: text('status_produk', { enum: ['active', 'inactive', 'draft'] })
+    .default('active')
+    .notNull(),
+  created_at: timestamp('created_at').notNull(),
+  updated_at: timestamp('updated_at').notNull(),
+}, (table) => ({
+  namaProdukIdx: index('idx_products_nama_produk').on(table.nama_produk),
+  kategoriIdx: index('idx_products_kategori_id').on(table.kategori_id),
+  kategoriStatusIdx: index('idx_products_kategori_status').on(table.kategori_id, table.status_produk),
+  statusIdx: index('idx_products_status_produk').on(table.status_produk),
+  createdAtIdx: index('idx_products_created_at').on(table.created_at),
 }));
 
 export const bookings = sqliteTable('bookings', {
@@ -105,6 +121,17 @@ export const usersRelations = relations(users, ({ many }) => ({
 
 export const ticketPackagesRelations = relations(ticketPackages, ({ many }) => ({
   bookings: many(bookings),
+}));
+
+export const productCategoriesRelations = relations(productCategories, ({ many }) => ({
+  products: many(products),
+}));
+
+export const productsRelations = relations(products, ({ one }) => ({
+  category: one(productCategories, {
+    fields: [products.kategori_id],
+    references: [productCategories.id],
+  }),
 }));
 
 export const bookingsRelations = relations(bookings, ({ one, many }) => ({

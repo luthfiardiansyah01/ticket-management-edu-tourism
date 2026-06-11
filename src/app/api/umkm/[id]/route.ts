@@ -59,78 +59,78 @@ export async function PUT(
 
     // Build update payload, only including provided fields
     const updateData: {
-      name?: string;
-      description?: string;
-      price?: number;
-      category?: 'food' | 'craft' | 'fashion' | 'souvenir' | 'other';
-      stock?: number;
-      image_url?: string | null;
-      is_active?: boolean;
+      nama_produk?: string;
+      deskripsi?: string;
+      harga?: number;
+      stok?: number;
+      kategori_id?: string;
+      gambar?: string | null;
+      status_produk?: 'active' | 'inactive' | 'draft';
     } = {};
 
-    if (body.name !== undefined) {
-      if (typeof body.name !== 'string' || body.name.trim().length === 0) {
+    if (body.nama_produk !== undefined) {
+      if (typeof body.nama_produk !== 'string' || body.nama_produk.trim().length === 0) {
         return NextResponse.json(
-          { error: 'Product name must be a non-empty string' },
+          { error: 'Nama produk harus berupa string non-kosong' },
           { status: 400 }
         );
       }
-      updateData.name = body.name.trim();
+      updateData.nama_produk = body.nama_produk.trim();
     }
 
-    if (body.description !== undefined) {
-      if (typeof body.description !== 'string') {
+    if (body.deskripsi !== undefined) {
+      if (typeof body.deskripsi !== 'string') {
         return NextResponse.json(
-          { error: 'Description must be a string' },
+          { error: 'Deskripsi harus berupa string' },
           { status: 400 }
         );
       }
-      updateData.description = body.description.trim();
+      updateData.deskripsi = body.deskripsi.trim();
     }
 
-    if (body.price !== undefined) {
-      if (typeof body.price !== 'number' || body.price < 0) {
+    if (body.harga !== undefined) {
+      if (typeof body.harga !== 'number' || body.harga < 0) {
         return NextResponse.json(
-          { error: 'Price must be a non-negative number' },
+          { error: 'Harga harus berupa angka non-negatif' },
           { status: 400 }
         );
       }
-      updateData.price = body.price;
+      updateData.harga = body.harga;
     }
 
-    if (body.category !== undefined) {
-      const validCategories = ['food', 'craft', 'fashion', 'souvenir', 'other'];
-      if (!validCategories.includes(body.category)) {
+    if (body.kategori_id !== undefined) {
+      if (typeof body.kategori_id !== 'string' || body.kategori_id.trim().length === 0) {
         return NextResponse.json(
-          { error: `Category must be one of: ${validCategories.join(', ')}` },
+          { error: 'kategori_id harus berupa string non-kosong' },
           { status: 400 }
         );
       }
-      updateData.category = body.category;
+      updateData.kategori_id = body.kategori_id.trim();
     }
 
-    if (body.stock !== undefined) {
-      if (typeof body.stock !== 'number' || body.stock < 0) {
+    if (body.stok !== undefined) {
+      if (typeof body.stok !== 'number' || body.stok < 0) {
         return NextResponse.json(
-          { error: 'Stock must be a non-negative number' },
+          { error: 'Stok harus berupa angka non-negatif' },
           { status: 400 }
         );
       }
-      updateData.stock = body.stock;
+      updateData.stok = body.stok;
     }
 
-    if (body.image_url !== undefined) {
-      updateData.image_url = body.image_url;
+    if (body.gambar !== undefined) {
+      updateData.gambar = body.gambar;
     }
 
-    if (body.is_active !== undefined) {
-      if (typeof body.is_active !== 'boolean') {
+    if (body.status_produk !== undefined) {
+      const validStatus = ['active', 'inactive', 'draft'];
+      if (!validStatus.includes(body.status_produk)) {
         return NextResponse.json(
-          { error: 'is_active must be a boolean' },
+          { error: `status_produk harus salah satu dari: ${validStatus.join(', ')}` },
           { status: 400 }
         );
       }
-      updateData.is_active = body.is_active;
+      updateData.status_produk = body.status_produk;
     }
 
     if (Object.keys(updateData).length === 0) {

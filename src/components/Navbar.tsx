@@ -31,6 +31,10 @@ export default function Navbar() {
               {t('nav.packages')}
             </Link>
 
+            <Link href="/umkm" className="text-foreground/80 hover:text-green-600 dark:hover:text-green-400 px-3 py-2 rounded-md text-sm font-medium">
+              {t('nav.umkm')}
+            </Link>
+
             {/* Partnership Dropdown / Link */}
             <Link href="/partnership" className="text-foreground/80 hover:text-green-600 dark:hover:text-green-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1">
               <Heart className="h-4 w-4 text-red-500" />
@@ -90,6 +94,9 @@ export default function Navbar() {
           <div className="pt-2 pb-3 space-y-1">
             <Link href="/packages" className="block px-3 py-2 rounded-md text-base font-medium text-foreground/80 hover:text-green-600 hover:bg-foreground/5">
               {t('nav.packages')}
+            </Link>
+            <Link href="/umkm" className="block px-3 py-2 rounded-md text-base font-medium text-foreground/80 hover:text-green-600 hover:bg-foreground/5">
+              {t('nav.umkm')}
             </Link>
             <Link href="/partnership" className="block px-3 py-2 rounded-md text-base font-medium text-foreground/80 hover:text-green-600 hover:bg-foreground/5 flex items-center gap-2">
               <Heart className="h-4 w-4 text-red-500" />

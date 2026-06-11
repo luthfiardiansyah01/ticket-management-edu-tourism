@@ -60,6 +60,16 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
+      <div className="mb-8 rounded-lg border border-green-200 bg-green-50 p-6 flex items-center justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-semibold text-green-900">UMKM Products</h3>
+          <p className="text-sm text-green-800/80">Kelola penambahan produk UMKM dengan form upload gambar dan validasi penuh.</p>
+        </div>
+        <Link href="/dashboard/admin/umkm/new" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 whitespace-nowrap">
+          Tambah Produk
+        </Link>
+      </div>
+
       {/* Recent Bookings */}
       <div className="bg-white shadow overflow-hidden sm:rounded-lg">
         <div className="px-4 py-5 sm:px-6">

@@ -10,7 +10,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:e2e": "cross-env NODE_ENV=test jest --testPathPatterns=e2e --runInBand --testTimeout=30000"
+    "test:e2e": "cross-env NODE_ENV=test jest --testPathPatterns=e2e --runInBand --testTimeout=30000",
+    "seed:umkm": "tsx scripts/seed-umkm.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",

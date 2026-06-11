@@ -262,6 +262,9 @@ npx drizzle-kit push
 
 # Seed database dengan data awal (opsional)
 npx tsx scripts/seed.ts
+
+# Seed data UMKM produk awal (idempotent dan aman untuk production bila dijalankan secara sengaja)
+npx tsx scripts/seed-umkm.ts
 ```
 
 ### Menjalankan Aplikasi
@@ -311,6 +314,9 @@ npx drizzle-kit push
 
 # Open Drizzle Studio (database GUI)
 npx drizzle-kit studio
+
+# Seed produk UMKM
+npm run seed:umkm
 ```
 
 ## API Endpoints
